@@ -1,4 +1,4 @@
-import requests
+mport requests
 import re
 from colorama import Fore, init
 import argparse
@@ -51,6 +51,9 @@ if os.path.exists(options.dicText):
             else:
                 pass
 
+else:
+    print ("El diccionario indicado no existe!")
+
 print (f"{CYAN}", "DIRECTORIOS ENCONTRADOS".center(90, "-"), f"{RESET}")
 print (f"\n{YELLOW}URL: {options.url}{RESET}\n")
 for i in foundDirs:
@@ -59,3 +62,4 @@ for i in foundDirs:
 #end_time = perf_counter()
 
 #print(f'It took {end_time- start_time: 0.2f} second(s) to complete.')
+
