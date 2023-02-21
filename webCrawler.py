@@ -1,4 +1,4 @@
-mport requests
+import requests
 import re
 from colorama import Fore, init
 import argparse
