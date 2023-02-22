@@ -4,7 +4,8 @@ import requests
 import re
 from colorama import Fore, init
 import argparse
-import os, sys
+import os
+from uritools import urijoin
 
 init()
 GREEN = Fore.GREEN
@@ -16,19 +17,23 @@ RESET = Fore.RESET
 parser = argparse.ArgumentParser()
 parser.add_argument("-u", "--url", dest="url", help="URL a escanear. webCrawler.py -u https://google.com")
 parser.add_argument("-c", "--code", dest="code", nargs="*", help="Códigos a extraer. webCrawler.py -u https://google.com -c 200")
-parser.add_argument("-d", "--dict", dest="dicText", help="Códigos a extraer. webCrawler.py -u https://google.com -c 200 -d common.txt")
-parser.add_argument("-r", "--rec", dest="recursive", action='store', nargs="*", help="Buscar directorios recursivamente (un nivel). webCrawler.py -u https://google.com -c 200 -r true")
+parser.add_argument("-d", "--dict", dest="dicText", nargs="*", help="Códigos a extraer. webCrawler.py -u https://google.com -c 200 -d common.txt")
+parser.add_argument("-r", "--rec", dest="recursive", nargs="*", help="Buscar directorios recursivamente. webCrawler.py -u https://google.com -c 200 -r true")
+parser.add_argument("-l", "--link", dest="link", nargs="*", help="Extraer enlaces de la web indicada. webCrawler.py -u https://google.com -l true")
 options = parser.parse_args()
 
 codigo = []
-for i in options.code:
-    if i != ",":
-        codigo.append(i)
+
+if options.code:
+    for i in options.code:
+        if i != ",":
+            codigo.append(i)
 
 url = options.url
 foundDirs = []
 foundD2 = []
 dirsD = []
+targetLinks = []
 
 def getDirs(urlParam, listURL):
 
@@ -41,7 +46,6 @@ def getDirs(urlParam, listURL):
                     subDirURL = urlParam + line
 
                     try:
-                        #print (f"Petición a {urlParam} -> {subDirURL}")
                         getResponse = requests.get(subDirURL)
                         filterResponse = re.search("\d\d\d", str(getResponse))
         
@@ -60,32 +64,49 @@ def getDirs(urlParam, listURL):
     else:
         print (f"{RED}El diccionario indicado no existe!{RESET}\n")
 
-getDirs(url, foundDirs)
 
-print (f"\r{CYAN}", "DIRECTORIOS ENCONTRADOS".center(90, "-"), f"{RESET}")
-print (f"\n{YELLOW}URL: {options.url}{RESET}\n")
+if options.dicText:
 
-if len(foundDirs) != 0:
-    for i in foundDirs:
-        print (f"{GREEN}[+] /{i}{RESET}")
-
-    if options.recursive:
-
-        print (f"\n\n{YELLOW}[+] Buscando subdirectorios...\n")
-
-        for i in foundDirs:
-            recURL = url + i + '/'
-
-            if recURL not in foundDirs:
-                getDirs(recURL, foundD2)
+    getDirs(url, foundDirs)
     
-                for j in foundD2:
-                    newURL = i + '/' + j
-                    dirsD.append(newURL)
+    print (f"\r{CYAN}", "DIRECTORIOS ENCONTRADOS".center(90, "-"), f"{RESET}")
+    print (f"\n{YELLOW}URL: {options.url}{RESET}\n")
 
-    print ()
-    for k in dirsD:
-        print (f"{GREEN}-> {k}{RESET}")
-else:
-    pass
+    if len(foundDirs) != 0:
+        for i in foundDirs:
+            print (f"{GREEN}[+] /{i}{RESET}")
+
+        if options.recursive:
+
+            print (f"\n\n{YELLOW}[+] Buscando subdirectorios...\n")
+
+            for i in foundDirs:
+                recURL = url + i + '/'
+
+                if recURL not in foundDirs:
+                    getDirs(recURL, foundD2)
+    
+                    for j in foundD2:
+                        newURL = i + '/' + j
+                        dirsD.append(newURL)
+
+        print ()
+        for k in dirsD:
+            print (f"{GREEN}-> {k}{RESET}")
+    else:
+        pass
+
+if options.link:
+
+    requestContent = requests.get(options.url)
+    storeLinks = re.findall('(?:href=")(.*?)"', str(requestContent.content))
+    for i in storeLinks:
+        link = urijoin(options.url, i)
+        if link not in targetLinks and "#" not in link:
+            targetLinks.append(link)
+        else:
+            pass
+    for i in targetLinks:
+        print (f"{GREEN}[+] {i}{RESET}")
+
 
